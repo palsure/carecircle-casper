@@ -1,0 +1,704 @@
+# 💜 CareCircle on Casper
+
+> **Caregiving coordination with verifiable on-chain task completion proofs**
+
+Built for **Casper Hackathon 2026** 🏆
+
+![CareCircle Banner](https://img.shields.io/badge/Casper-Hackathon%202026-ff0012?style=for-the-badge)
+![Rust](https://img.shields.io/badge/Smart%20Contract-Rust%20%2B%20Odra-orange?style=for-the-badge)
+![React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61dafb?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=for-the-badge)
+
+---
+
+## 📋 Table of Contents
+
+- [Project Overview](#-project-overview)
+- [Key Features](#-key-features)
+- [System Architecture](#-system-architecture)
+- [User Flows](#-user-flows)
+- [Project Structure](#-project-structure)
+- [Quick Start](#-quick-start)
+- [API Documentation](#-api-documentation)
+- [Smart Contract](#-smart-contract)
+- [Deployment Guide](#-deployment-guide)
+- [Technology Stack](#-technology-stack)
+- [Hackathon Submission](#-hackathon-submission)
+
+---
+
+## 🎯 Project Overview
+
+**CareCircle** is a decentralized application that coordinates caregiving tasks for families, elder care, and community volunteers. It creates **verifiable on-chain proofs** of task completion, bringing accountability and transparency to caregiving.
+
+### The Problem
+
+Millions of people rely on informal caregiving networks - family members, neighbors, and volunteers who help with daily tasks. But there's no way to:
+- **Verify** that care tasks were actually completed
+- **Coordinate** effectively among multiple caregivers
+- **Document** care activities for insurance or legal purposes
+- **Build trust** in community care networks
+
+### The Solution
+
+CareCircle uses the Casper blockchain to:
+- ✅ **Record verifiable proofs** of task completion, signed by the caregiver
+- 👥 **Coordinate care circles** - groups of people sharing caregiving responsibilities
+- 📋 **Manage tasks** with priorities, assignments, and deadlines
+- 🔗 **Create transparency** with on-chain activity that anyone can verify
+
+---
+
+## 🌟 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Care Circles** | Create groups of caregivers (family, friends, volunteers) |
+| **Task Management** | Assign tasks with priorities (urgent, high, medium, low) |
+| **Wallet Signing** | Task completion requires wallet signature (proof of identity) |
+| **On-Chain Proofs** | Every completion is recorded on Casper blockchain |
+| **Explorer Links** | View transactions on Casper Testnet Explorer |
+| **Member Management** | Add/remove circle members with on-chain records |
+| **Event System** | Smart contract emits events for all activities |
+| **Swagger API Docs** | Full REST API documentation at `/docs` |
+
+---
+
+## 🏗️ System Architecture
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              USER INTERFACE                                  │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                        React + Vite Frontend                          │  │
+│  │                     http://localhost:5173                             │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
+│  │  │   Connect   │  │   Create    │  │   Manage    │  │  Complete   │  │  │
+│  │  │   Wallet    │  │   Circle    │  │   Tasks     │  │   Tasks     │  │  │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │  │
+│  └─────────┼────────────────┼────────────────┼────────────────┼─────────┘  │
+└────────────┼────────────────┼────────────────┼────────────────┼────────────┘
+             │                │                │                │
+             ▼                ▼                ▼                ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SERVICE LAYER                                      │
+│  ┌───────────────────────────────┐    ┌───────────────────────────────────┐ │
+│  │      Casper Wallet SDK        │    │        Express.js API             │ │
+│  │   (Signing & Transactions)    │    │    http://localhost:3005          │ │
+│  │                               │    │                                   │ │
+│  │  • Connect wallet             │    │  • /circles - Circle management   │ │
+│  │  • Sign deploys               │    │  • /tasks - Task management       │ │
+│  │  • Submit transactions        │    │  • /members - Member management   │ │
+│  │                               │    │  • /stats - Analytics             │ │
+│  │                               │    │  • /docs - Swagger UI             │ │
+│  └───────────────┬───────────────┘    └─────────────────┬─────────────────┘ │
+└──────────────────┼──────────────────────────────────────┼───────────────────┘
+                   │                                      │
+                   ▼                                      ▼
+┌─────────────────────────────────────┐  ┌────────────────────────────────────┐
+│      CASPER BLOCKCHAIN              │  │         SQLite DATABASE            │
+│      (Testnet)                      │  │         (Cache Layer)              │
+│                                     │  │                                    │
+│  ┌───────────────────────────────┐  │  │  ┌────────────────────────────┐   │
+│  │   CareCircle Smart Contract   │  │  │  │  circles                   │   │
+│  │   (Rust + Odra Framework)     │  │  │  │  ├── id, name, owner       │   │
+│  │                               │  │  │  │  └── tx_hash, created_at   │   │
+│  │   Entry Points:               │  │  │  │                            │   │
+│  │   • create_circle()           │  │  │  │  members                   │   │
+│  │   • add_member()              │  │  │  │  ├── circle_id, address    │   │
+│  │   • create_task()             │  │  │  │  └── is_owner, joined_at   │   │
+│  │   • complete_task() ← PROOF   │  │  │  │                            │   │
+│  │                               │  │  │  │  tasks                     │   │
+│  │   Events:                     │  │  │  │  ├── id, circle_id, title  │   │
+│  │   • CircleCreated             │  │  │  │  ├── assigned_to, priority │   │
+│  │   • MemberAdded               │  │  │  │  └── completed, tx_hash    │   │
+│  │   • TaskCreated               │  │  │  └────────────────────────────┘   │
+│  │   • TaskCompleted             │  │  │                                    │
+│  └───────────────────────────────┘  │  └────────────────────────────────────┘
+└─────────────────────────────────────┘
+```
+
+### Component Interaction Flow
+
+```
+┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+│  User    │     │ Frontend │     │   API    │     │  Casper  │     │ Explorer │
+│ Browser  │     │  (React) │     │(Express) │     │ Testnet  │     │(cspr.live)│
+└────┬─────┘     └────┬─────┘     └────┬─────┘     └────┬─────┘     └────┬─────┘
+     │                │                │                │                │
+     │ 1. Click       │                │                │                │
+     │    "Complete"  │                │                │                │
+     ├───────────────►│                │                │                │
+     │                │                │                │                │
+     │                │ 2. Build deploy│                │                │
+     │                │    (casper-sdk)│                │                │
+     │                ├────────────────┤                │                │
+     │                │                │                │                │
+     │ 3. Sign popup  │                │                │                │
+     │◄───────────────┤                │                │                │
+     │                │                │                │                │
+     │ 4. Approve     │                │                │                │
+     ├───────────────►│                │                │                │
+     │                │                │                │                │
+     │                │ 5. Submit deploy               │                │
+     │                ├───────────────────────────────►│                │
+     │                │                │                │                │
+     │                │                │ 6. Deploy hash │                │
+     │                │◄───────────────────────────────┤                │
+     │                │                │                │                │
+     │                │ 7. Cache result│                │                │
+     │                ├───────────────►│                │                │
+     │                │                │                │                │
+     │ 8. Show success│                │                │                │
+     │    + tx link   │                │                │                │
+     │◄───────────────┤                │                │                │
+     │                │                │                │                │
+     │ 9. Click link  │                │                │                │
+     ├────────────────┼────────────────┼────────────────┼───────────────►│
+     │                │                │                │                │
+     │                │                │                │  10. View proof│
+     │◄───────────────┼────────────────┼────────────────┼────────────────┤
+     │                │                │                │                │
+```
+
+---
+
+## 🔄 User Flows
+
+### Flow 1: Wallet Connection
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    WALLET CONNECTION FLOW                        │
+└─────────────────────────────────────────────────────────────────┘
+
+  ┌─────────┐                                              
+  │  START  │                                              
+  └────┬────┘                                              
+       │                                                   
+       ▼                                                   
+  ┌─────────────┐     YES     ┌─────────────────────────┐  
+  │ Casper      ├────────────►│ Open Casper Wallet      │  
+  │ Wallet      │             │ extension popup         │  
+  │ installed?  │             └───────────┬─────────────┘  
+  └──────┬──────┘                         │                
+         │ NO                             ▼                
+         ▼                          ┌─────────────┐        
+  ┌─────────────┐                   │ User        │        
+  │ Show prompt │                   │ approves    │        
+  │ with demo   │                   │ connection  │        
+  │ wallet addr │                   └──────┬──────┘        
+  └──────┬──────┘                          │               
+         │                                 ▼               
+         ▼                          ┌─────────────┐        
+  ┌─────────────┐                   │ Get public  │        
+  │ User enters │                   │ key from    │        
+  │ or accepts  │                   │ wallet      │        
+  │ default     │                   └──────┬──────┘        
+  └──────┬──────┘                          │               
+         │                                 │               
+         └────────────────┬────────────────┘               
+                          │                                
+                          ▼                                
+                   ┌─────────────┐                         
+                   │ Store in    │                         
+                   │ localStorage│                         
+                   └──────┬──────┘                         
+                          │                                
+                          ▼                                
+                   ┌─────────────┐                         
+                   │  CONNECTED  │                         
+                   │  Show addr  │                         
+                   └─────────────┘                         
+```
+
+### Flow 2: Create Circle
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CREATE CIRCLE FLOW                            │
+└─────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────┐                                          
+  │ User clicks │                                          
+  │ "Create     │                                          
+  │  Circle"    │                                          
+  └──────┬──────┘                                          
+         │                                                 
+         ▼                                                 
+  ┌─────────────┐     NO      ┌─────────────────┐          
+  │ Wallet      ├────────────►│ Show error:     │          
+  │ connected?  │             │ "Connect wallet │          
+  └──────┬──────┘             │  first"         │          
+         │ YES                └─────────────────┘          
+         ▼                                                 
+  ┌─────────────┐                                          
+  │ Open modal  │                                          
+  │ Enter circle│                                          
+  │ name        │                                          
+  └──────┬──────┘                                          
+         │                                                 
+         ▼                                                 
+  ┌─────────────────────────────────────────────┐          
+  │              DEMO MODE?                      │          
+  │                                              │          
+  │  YES (no contract)    NO (contract deployed) │          
+  │         │                      │             │          
+  │         ▼                      ▼             │          
+  │  ┌─────────────┐       ┌─────────────┐      │          
+  │  │ Generate    │       │ Build deploy│      │          
+  │  │ demo ID +   │       │ Sign tx     │      │          
+  │  │ fake hash   │       │ Submit      │      │          
+  │  └──────┬──────┘       └──────┬──────┘      │          
+  │         │                     │              │          
+  └─────────┼─────────────────────┼──────────────┘          
+            │                     │                         
+            └──────────┬──────────┘                         
+                       │                                    
+                       ▼                                    
+                ┌─────────────┐                             
+                │ Save to API │                             
+                │ (cache DB)  │                             
+                └──────┬──────┘                             
+                       │                                    
+                       ▼                                    
+                ┌─────────────┐                             
+                │ Show toast  │                             
+                │ "Circle     │                             
+                │  Created!"  │                             
+                └──────┬──────┘                             
+                       │                                    
+                       ▼                                    
+                ┌─────────────┐                             
+                │ Load circle │                             
+                │ view        │                             
+                └─────────────┘                             
+```
+
+### Flow 3: Complete Task (Verifiable Proof)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│               COMPLETE TASK FLOW (CREATES PROOF!)                │
+└─────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────┐                                          
+  │ User clicks │                                          
+  │ "Complete"  │                                          
+  │ on task     │                                          
+  └──────┬──────┘                                          
+         │                                                 
+         ▼                                                 
+  ┌─────────────┐     NO      ┌─────────────────┐          
+  │ Is user the ├────────────►│ Error: "Only    │          
+  │ assignee?   │             │ assignee can    │          
+  └──────┬──────┘             │ complete"       │          
+         │ YES                └─────────────────┘          
+         ▼                                                 
+  ┌─────────────┐                                          
+  │ Show loading│                                          
+  │ "Signing    │                                          
+  │  completion"│                                          
+  └──────┬──────┘                                          
+         │                                                 
+         ▼                                                 
+  ┌─────────────────────────────────────────────┐          
+  │       BUILD & SIGN TRANSACTION              │          
+  │                                              │          
+  │  ┌─────────────────────────────────────┐    │          
+  │  │ Deploy contains:                    │    │          
+  │  │ • task_id: 123                      │    │          
+  │  │ • entry_point: "complete_task"      │    │          
+  │  │ • signer: user's public key         │    │          
+  │  │ • timestamp: current block time     │    │          
+  │  └─────────────────────────────────────┘    │          
+  │                                              │          
+  └──────────────────────┬──────────────────────┘          
+                         │                                 
+                         ▼                                 
+  ┌─────────────────────────────────────────────┐          
+  │           CASPER BLOCKCHAIN                  │          
+  │                                              │          
+  │  1. Validate signer is assignee             │          
+  │  2. Mark task as completed                  │          
+  │  3. Record timestamp                        │          
+  │  4. Emit TaskCompleted event                │          
+  │  5. Return deploy hash                      │          
+  │                                              │          
+  │  ┌─────────────────────────────────────┐    │          
+  │  │ TaskCompleted Event:                │    │          
+  │  │ {                                   │    │          
+  │  │   task_id: 123,                     │    │          
+  │  │   circle_id: 1,                     │    │          
+  │  │   completed_by: "0202b40d...",      │    │          
+  │  │   timestamp: 1704393600             │    │          
+  │  │ }                                   │    │          
+  │  └─────────────────────────────────────┘    │          
+  │                                              │          
+  └──────────────────────┬──────────────────────┘          
+                         │                                 
+                         ▼                                 
+                  ┌─────────────┐                          
+                  │ Update API  │                          
+                  │ with tx_hash│                          
+                  └──────┬──────┘                          
+                         │                                 
+                         ▼                                 
+  ┌─────────────────────────────────────────────┐          
+  │              UI UPDATE                       │          
+  │                                              │          
+  │  ✅ Task marked complete                     │          
+  │  🔗 Transaction link: testnet.cspr.live/... │          
+  │  📊 Stats updated                            │          
+  │                                              │          
+  └─────────────────────────────────────────────┘          
+                                                           
+   ════════════════════════════════════════════════        
+   ║  THIS TRANSACTION IS THE VERIFIABLE PROOF!  ║        
+   ║  Anyone can verify on Casper Explorer that  ║        
+   ║  this specific wallet signed this task at   ║        
+   ║  this specific time.                        ║        
+   ════════════════════════════════════════════════        
+```
+
+### Flow 4: Data Synchronization
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  DATA SYNC ARCHITECTURE                          │
+└─────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────┐
+  │                    WRITE PATH                               │
+  │                                                             │
+  │   User Action                                               │
+  │        │                                                    │
+  │        ▼                                                    │
+  │   ┌─────────┐         ┌─────────┐         ┌─────────┐      │
+  │   │Frontend │────────►│ Casper  │────────►│Blockchain│      │
+  │   │         │  sign   │ Wallet  │  submit │ (source  │      │
+  │   │         │◄────────│         │◄────────│ of truth)│      │
+  │   └────┬────┘         └─────────┘         └─────────┘      │
+  │        │                                                    │
+  │        │ tx_hash                                            │
+  │        ▼                                                    │
+  │   ┌─────────┐         ┌─────────┐                          │
+  │   │ API     │────────►│ SQLite  │                          │
+  │   │ Cache   │  store  │ (fast   │                          │
+  │   │         │         │  reads) │                          │
+  │   └─────────┘         └─────────┘                          │
+  │                                                             │
+  └────────────────────────────────────────────────────────────┘
+  
+  ┌────────────────────────────────────────────────────────────┐
+  │                    READ PATH                                │
+  │                                                             │
+  │   User Views Circle/Tasks                                   │
+  │        │                                                    │
+  │        ▼                                                    │
+  │   ┌─────────┐         ┌─────────┐                          │
+  │   │Frontend │────────►│ API     │                          │
+  │   │         │  fetch  │ Cache   │                          │
+  │   │         │◄────────│ (fast!) │                          │
+  │   └─────────┘         └────┬────┘                          │
+  │                            │                                │
+  │                            │ (for verification)             │
+  │                            ▼                                │
+  │                       ┌─────────┐                          │
+  │                       │ Casper  │                          │
+  │                       │Explorer │                          │
+  │                       │ Links   │                          │
+  │                       └─────────┘                          │
+  │                                                             │
+  └────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 Project Structure
+
+```
+carecircle-casper/
+├── apps/
+│   ├── web/                      # Frontend Application
+│   │   ├── src/
+│   │   │   ├── App.jsx           # Main React component
+│   │   │   ├── main.jsx          # Entry point
+│   │   │   ├── styles.css        # Modern dark UI styles
+│   │   │   └── lib/
+│   │   │       ├── casper.js     # Casper SDK integration
+│   │   │       └── api.js        # API client functions
+│   │   ├── index.html            # HTML template
+│   │   ├── vite.config.js        # Vite configuration
+│   │   └── package.json
+│   │
+│   └── api/                      # Backend API
+│       └── src/
+│           ├── index.js          # Express server + Swagger
+│           └── db.js             # SQLite database setup
+│
+├── contracts/
+│   └── carecircle/               # Smart Contract
+│       ├── src/
+│       │   └── lib.rs            # Contract logic (Rust + Odra)
+│       ├── Cargo.toml            # Rust dependencies
+│       └── README.md             # Contract documentation
+│
+├── scripts/
+│   ├── deploy-contract.sh        # Testnet deployment script
+│   └── seed-demo.sh              # Demo data seeder
+│
+├── keys/                         # Casper keys (gitignored)
+│   ├── public_key_hex
+│   └── secret_key.pem
+│
+├── packages/
+│   └── shared/                   # Shared types/utilities
+│
+├── package.json                  # Workspace configuration
+└── README.md                     # This file
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 18+ and npm
+- **Rust** nightly toolchain (for contract development)
+- **Casper Wallet** browser extension (optional, for live mode)
+
+### 1. Clone and Install
+
+```bash
+git clone <repository-url>
+cd carecircle-casper
+npm install
+```
+
+### 2. Start the API Server
+
+```bash
+cd apps/api
+npm install
+npm run dev
+# ✅ API running at http://localhost:3005
+# ✅ Swagger docs at http://localhost:3005/docs
+```
+
+### 3. Start the Frontend
+
+```bash
+cd apps/web
+npm install
+npm run dev
+# ✅ Frontend running at http://localhost:5173
+```
+
+### 4. Seed Demo Data (Optional)
+
+```bash
+chmod +x scripts/seed-demo.sh
+./scripts/seed-demo.sh
+# Creates demo circle with 4 tasks
+```
+
+### 5. Try It Out
+
+1. Open http://localhost:5173
+2. Click **"Load Existing Circle"** → Enter **1** → Load
+3. Explore the demo circle with sample tasks!
+
+---
+
+## 📡 API Documentation
+
+### Base URL
+```
+http://localhost:3005
+```
+
+### Swagger UI
+```
+http://localhost:3005/docs
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | API information |
+| `GET` | `/health` | Health check |
+| `POST` | `/circles/upsert` | Create/update circle |
+| `GET` | `/circles/:id` | Get circle by ID |
+| `GET` | `/circles/:id/members` | Get circle members |
+| `GET` | `/circles/:id/tasks` | Get circle tasks |
+| `GET` | `/circles/:id/stats` | Get circle statistics |
+| `POST` | `/members/upsert` | Add/update member |
+| `POST` | `/tasks/upsert` | Create/update task |
+| `GET` | `/tasks/:id` | Get task by ID |
+| `GET` | `/stats` | Global statistics |
+
+### Example: Create a Circle
+
+```bash
+curl -X POST http://localhost:3005/circles/upsert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "name": "Family Care Team",
+    "owner": "0202b40ddeb748ccc6f80048bb6e0f2be1969dc528600390224557eb05c0e0f8844d"
+  }'
+```
+
+---
+
+## 📜 Smart Contract
+
+### Contract Address
+Deploy to Casper Testnet to get your contract hash.
+
+### Entry Points
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `init()` | - | Initialize contract |
+| `create_circle(name)` | String | Create new circle, returns ID |
+| `add_member(circle_id, member)` | u64, Address | Add member to circle |
+| `create_task(circle_id, title, assigned_to, priority)` | u64, String, Address, u8 | Create task |
+| `complete_task(task_id)` | u64 | Complete task (creates proof!) |
+| `get_circle(circle_id)` | u64 | Read circle data |
+| `get_task(task_id)` | u64 | Read task data |
+| `check_is_member(circle_id, addr)` | u64, Address | Check membership |
+
+### Events
+
+| Event | Fields | When Emitted |
+|-------|--------|--------------|
+| `CircleCreated` | circle_id, name, owner | New circle created |
+| `MemberAdded` | circle_id, member, added_by | Member joins |
+| `TaskCreated` | task_id, circle_id, title, assigned_to | Task created |
+| `TaskCompleted` | task_id, circle_id, completed_by, timestamp | **VERIFIABLE PROOF** |
+
+---
+
+## 🔗 Deployment Guide
+
+### Step 1: Install Rust Toolchain
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup install nightly-2025-02-15
+rustup default nightly-2025-02-15
+rustup target add wasm32-unknown-unknown
+```
+
+### Step 2: Install Casper Client
+
+```bash
+cargo install casper-client
+```
+
+### Step 3: Generate Keys
+
+```bash
+casper-client keygen ./keys
+cat ./keys/public_key_hex  # Your public key
+```
+
+### Step 4: Get Testnet CSPR
+
+1. Visit https://testnet.cspr.live/tools/faucet
+2. Paste your public key
+3. Request tokens (~100 CSPR needed)
+
+### Step 5: Deploy Contract
+
+```bash
+export CASPER_SECRET_KEY=./keys/secret_key.pem
+./scripts/deploy-contract.sh
+```
+
+### Step 6: Configure Frontend
+
+Create `apps/web/.env`:
+```env
+VITE_CONTRACT_HASH=hash-<your-contract-hash>
+VITE_CASPER_NETWORK=casper-test
+VITE_API_URL=http://localhost:3005
+```
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Blockchain** | Casper Testnet | Immutable transaction records |
+| **Smart Contract** | Rust + Odra | On-chain logic & events |
+| **Wallet** | Casper Wallet SDK | Transaction signing |
+| **Frontend** | React 18 + Vite | User interface |
+| **Backend** | Express.js | REST API |
+| **Database** | SQLite | Fast cache layer |
+| **API Docs** | Swagger UI | Interactive documentation |
+
+---
+
+## 🏆 Hackathon Submission
+
+### Track
+**Main Track** - General submission
+
+### Project Summary
+
+**CareCircle** solves a real-world problem: coordinating and verifying caregiving activities. By recording task completions on the Casper blockchain, we create:
+
+1. **Verifiable Proofs** - Anyone can verify a caregiver completed a task
+2. **Accountability** - Clear records of who did what and when
+3. **Trust** - Families can trust that care is being provided
+4. **Documentation** - Useful for insurance, legal, or medical purposes
+
+### Key Innovations
+
+- **Signed Task Completion** - The caregiver's wallet signature proves identity
+- **Event-Driven Architecture** - All activities emit on-chain events
+- **Hybrid Architecture** - Fast local cache + blockchain source of truth
+- **User-Friendly UX** - Beautiful dark UI that anyone can use
+
+### Potential Extensions
+
+- Integration with healthcare systems
+- Insurance verification APIs
+- Community care networks
+- Professional caregiver marketplaces
+
+---
+
+## 📚 Resources
+
+- [Casper Network Documentation](https://docs.casper.network)
+- [Odra Framework](https://odra.dev/docs)
+- [Casper Wallet](https://www.casperwallet.io/)
+- [Testnet Explorer](https://testnet.cspr.live)
+- [Testnet Faucet](https://testnet.cspr.live/tools/faucet)
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+Built with 💜 for **Casper Hackathon 2026**
+
+[Casper Network](https://casper.network) | [Odra Framework](https://odra.dev) | [CSPR.click](https://cspr.click)
+
+**🏆 Good luck to all participants! 🏆**
+
+</div>

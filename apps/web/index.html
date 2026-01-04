@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title>CareCircle on Casper - Verifiable Caregiving Coordination</title>
+    <meta name="title" content="CareCircle on Casper - Verifiable Caregiving Coordination" />
+    <meta name="description" content="Coordinate caregiving tasks with verifiable on-chain completion proofs. Built for Casper Hackathon 2026." />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://carecircle.casper.network/" />
+    <meta property="og:title" content="CareCircle on Casper" />
+    <meta property="og:description" content="Coordinate caregiving tasks with verifiable on-chain completion proofs. Built for Casper Hackathon 2026." />
+    <meta property="og:image" content="/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://carecircle.casper.network/" />
+    <meta property="twitter:title" content="CareCircle on Casper" />
+    <meta property="twitter:description" content="Coordinate caregiving tasks with verifiable on-chain completion proofs. Built for Casper Hackathon 2026." />
+    <meta property="twitter:image" content="/og-image.png" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💜</text></svg>" />
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#0a0a0f" />
+    
+    <!-- CSPR.click SDK - Wallet Connection -->
+    <script src="https://cdn.cspr.click/casper-wallet-sdk.js" defer></script>
+    <script>
+      // Initialize CSPR.click when ready
+      window.addEventListener('load', () => {
+        if (window.CsprClick) {
+          console.log('CSPR.click SDK loaded successfully');
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

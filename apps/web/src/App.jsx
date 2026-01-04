@@ -10,11 +10,11 @@ import {
   formatAddress,
   isDemoMode
 } from "./lib/casper.js";
-import { 
-  upsertCircle, 
-  upsertTask, 
-  fetchTasks, 
-  fetchCircle, 
+import {
+  upsertCircle,
+  upsertTask,
+  fetchTasks,
+  fetchCircle,
   fetchMembers,
   upsertMember,
   fetchCircleStats
@@ -89,7 +89,7 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
             <div className="help-section">
               <h3>Welcome to CareCircle! 💜</h3>
               <p>
-                CareCircle helps families, caregivers, and volunteers coordinate caregiving tasks 
+                CareCircle helps families, caregivers, and volunteers coordinate caregiving tasks
                 with verifiable on-chain completion proofs on the Casper blockchain.
               </p>
 
@@ -226,8 +226,8 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>What is Demo Mode?</h4>
                 <p>
-                  Demo Mode allows you to explore CareCircle without connecting a Casper wallet. 
-                  Blockchain transactions are simulated locally. To use real on-chain features, 
+                  Demo Mode allows you to explore CareCircle without connecting a Casper wallet.
+                  Blockchain transactions are simulated locally. To use real on-chain features,
                   connect your Casper Wallet.
                 </p>
               </div>
@@ -235,8 +235,8 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>Do I need CSPR tokens?</h4>
                 <p>
-                  Yes, to create circles, add members, and complete tasks on the Casper blockchain, 
-                  you need a small amount of CSPR for transaction fees. Use the 
+                  Yes, to create circles, add members, and complete tasks on the Casper blockchain,
+                  you need a small amount of CSPR for transaction fees. Use the
                   <a href="https://testnet.cspr.live/tools/faucet" target="_blank" rel="noopener noreferrer"> Testnet Faucet</a> to get free testnet CSPR.
                 </p>
               </div>
@@ -244,7 +244,7 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>Who can complete a task?</h4>
                 <p>
-                  Only the person assigned to a task can mark it as complete. This ensures 
+                  Only the person assigned to a task can mark it as complete. This ensures
                   accountability and prevents unauthorized task completion.
                 </p>
               </div>
@@ -252,8 +252,8 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>Can I edit or delete tasks?</h4>
                 <p>
-                  Currently, tasks cannot be edited or deleted once created. This preserves the 
-                  integrity of the on-chain record. Future versions may add task updates with 
+                  Currently, tasks cannot be edited or deleted once created. This preserves the
+                  integrity of the on-chain record. Future versions may add task updates with
                   version history.
                 </p>
               </div>
@@ -261,8 +261,8 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>What happens if I lose my wallet?</h4>
                 <p>
-                  Your wallet controls access to your circles and tasks. Always back up your 
-                  wallet's recovery phrase. If you lose access, you won't be able to sign 
+                  Your wallet controls access to your circles and tasks. Always back up your
+                  wallet's recovery phrase. If you lose access, you won't be able to sign
                   transactions for your circles.
                 </p>
               </div>
@@ -270,8 +270,8 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>Is my data private?</h4>
                 <p>
-                  Circle names, task titles, and member addresses are stored on-chain and are 
-                  publicly visible. Only circle members can view detailed task information in 
+                  Circle names, task titles, and member addresses are stored on-chain and are
+                  publicly visible. Only circle members can view detailed task information in
                   the app. Avoid including sensitive personal information in task titles.
                 </p>
               </div>
@@ -279,8 +279,8 @@ function HelpModal({ isOpen, onClose, activeTab, setActiveTab }) {
               <div className="faq-item">
                 <h4>How do I get support?</h4>
                 <p>
-                  CareCircle is a hackathon project. For issues or questions, check the 
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer"> GitHub repository</a> or 
+                  CareCircle is a hackathon project. For issues or questions, check the
+                  <a href="https://github.com" target="_blank" rel="noopener noreferrer"> GitHub repository</a> or
                   <a href="https://docs.casper.network" target="_blank" rel="noopener noreferrer"> Casper documentation</a>.
                 </p>
               </div>
@@ -329,10 +329,10 @@ function TaskCard({ task, onComplete, walletAddr, busy }) {
         <span className="task-id">#{task.id}</span>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           {task.priority !== undefined && (
-            <span 
-              style={{ 
-                fontSize: "0.7rem", 
-                padding: "2px 8px", 
+            <span
+              style={{
+                fontSize: "0.7rem",
+                padding: "2px 8px",
                 borderRadius: "9999px",
                 background: `${priorityColors[task.priority]}20`,
                 color: priorityColors[task.priority]
@@ -346,12 +346,12 @@ function TaskCard({ task, onComplete, walletAddr, busy }) {
           </span>
         </div>
       </div>
-      
+
       <h4 className="task-title">{task.title}</h4>
       {task.description && (
         <p className="text-sm text-muted mb-4">{task.description}</p>
       )}
-      
+
       <div className="task-meta">
         <div className="task-meta-item">
           <span className="label">Assigned to:</span>
@@ -368,7 +368,7 @@ function TaskCard({ task, onComplete, walletAddr, busy }) {
           </div>
         )}
       </div>
-      
+
       <div className="task-footer">
         <div className="task-tx">
           {task.tx_hash ? (
@@ -382,17 +382,17 @@ function TaskCard({ task, onComplete, walletAddr, busy }) {
             <span className="text-muted text-xs">No on-chain proof yet</span>
           )}
         </div>
-        
+
         {canComplete && (
-          <button 
-            className="btn btn-success btn-sm" 
+          <button
+            className="btn btn-success btn-sm"
             onClick={() => onComplete(task)}
             disabled={busy}
           >
             {busy ? "Signing..." : "✓ Complete Task"}
           </button>
         )}
-        
+
         {!task.completed && !isAssignee && walletAddr && (
           <span className="text-xs text-muted">Only assignee can complete</span>
         )}
@@ -438,7 +438,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [toasts, setToasts] = useState([]);
-  
+
   // Modal states
   const [showCreateCircle, setShowCreateCircle] = useState(false);
   const [showLoadCircle, setShowLoadCircle] = useState(false);
@@ -446,7 +446,7 @@ export default function App() {
   const [showAddMember, setShowAddMember] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [helpTab, setHelpTab] = useState("getting-started");
-  
+
   // Form states
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
@@ -508,7 +508,15 @@ export default function App() {
     await disconnectWallet();
     setWalletAddr("");
     localStorage.removeItem("carecircle_wallet");
-    addToast("Wallet Disconnected", null, "info");
+
+    // Reset to base state
+    setCircle(null);
+    setTasks([]);
+    setMembers([]);
+    setStats({ total_tasks: 0, completed_tasks: 0, open_tasks: 0, completion_rate: 0 });
+    localStorage.removeItem("carecircle_circle_id");
+
+    addToast("Wallet Disconnected", "Returned to home", "info");
   };
 
   // ==================== Circle Actions ====================
@@ -519,9 +527,9 @@ export default function App() {
     try {
       setBusy(true);
       setLoadingMessage("Creating circle on-chain...");
-      
+
       const result = await createCircleOnChain({ name: circleName });
-      
+
       await upsertCircle({
         id: result.id,
         name: circleName,
@@ -542,14 +550,14 @@ export default function App() {
         owner: walletAddr,
         txHash: result.txHash
       });
-      
+
       localStorage.setItem("carecircle_circle_id", result.id.toString());
-      
+
       setShowCreateCircle(false);
       setCircleName("");
-      
+
       addToast("Circle Created!", `${circleName} (ID: ${result.id})`, "success");
-      
+
       await refreshCircleData(result.id);
     } catch (err) {
       addToast("Failed to Create Circle", err.message, "error");
@@ -566,9 +574,9 @@ export default function App() {
     try {
       setBusy(true);
       setLoadingMessage("Loading circle...");
-      
+
       const circleData = await fetchCircle(id);
-      
+
       if (!circleData) {
         addToast("Not Found", `Circle #${id} doesn't exist`, "error");
         return;
@@ -580,14 +588,14 @@ export default function App() {
         owner: circleData.owner,
         txHash: circleData.tx_hash
       });
-      
+
       localStorage.setItem("carecircle_circle_id", id.toString());
-      
+
       setShowLoadCircle(false);
       setCircleIdToLoad("");
-      
+
       addToast("Circle Loaded!", circleData.name, "success");
-      
+
       await refreshCircleData(id);
     } catch (err) {
       addToast("Failed to Load Circle", err.message, "error");
@@ -614,7 +622,7 @@ export default function App() {
     try {
       setBusy(true);
       setLoadingMessage("Adding member on-chain...");
-      
+
       const result = await addMemberOnChain({
         circleId: circle.id,
         memberAddress: newMemberAddr.trim()
@@ -626,10 +634,10 @@ export default function App() {
         is_owner: false,
         tx_hash: result.txHash
       });
-      
+
       setShowAddMember(false);
       setNewMemberAddr("");
-      
+
       addToast("Member Added!", formatAddress(newMemberAddr), "success");
       await refreshCircleData(circle.id);
     } catch (err) {
@@ -644,13 +652,13 @@ export default function App() {
   const handleCreateTask = async () => {
     if (!circle) return addToast("Error", "No circle loaded", "error");
     if (!newTaskTitle.trim()) return addToast("Error", "Task title is required", "error");
-    
+
     const assignee = newTaskAssignee.trim() || walletAddr;
 
     try {
       setBusy(true);
       setLoadingMessage("Creating task on-chain...");
-      
+
       const result = await createTaskOnChain({
         circleId: circle.id,
         title: newTaskTitle,
@@ -674,7 +682,7 @@ export default function App() {
       setNewTaskDescription("");
       setNewTaskAssignee("");
       setNewTaskPriority(1);
-      
+
       addToast("Task Created!", newTaskTitle, "success");
       await refreshCircleData(circle.id);
     } catch (err) {
@@ -694,7 +702,7 @@ export default function App() {
     try {
       setBusy(true);
       setLoadingMessage("Signing task completion...");
-      
+
       const result = await completeTaskOnChain({ taskId: task.id });
 
       await upsertTask({
@@ -710,7 +718,7 @@ export default function App() {
         `On-chain proof: ${formatAddress(result.txHash, 10, 8)}`,
         "success"
       );
-      
+
       await refreshCircleData(circle.id);
     } catch (err) {
       addToast("Failed to Complete Task", err.message, "error");
@@ -733,13 +741,13 @@ export default function App() {
         setShowHelp(false);
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [showHelp]);
 
   // ==================== Effects ====================
-  
+
   // Load saved circle on mount
   useEffect(() => {
     const savedCircleId = localStorage.getItem("carecircle_circle_id");
@@ -773,12 +781,12 @@ export default function App() {
     <div className="app-container">
       {/* Loading overlay */}
       {loadingMessage && <LoadingOverlay message={loadingMessage} />}
-      
+
       {/* Toast notifications */}
       <Toast toasts={toasts} removeToast={removeToast} />
 
       {/* Floating Help Button */}
-      <button 
+      <button
         className="help-button"
         onClick={() => setShowHelp(true)}
         title="Help (Press ? for shortcuts)"
@@ -787,8 +795,8 @@ export default function App() {
       </button>
 
       {/* Help Modal */}
-      <HelpModal 
-        isOpen={showHelp} 
+      <HelpModal
+        isOpen={showHelp}
         onClose={() => setShowHelp(false)}
         activeTab={helpTab}
         setActiveTab={setHelpTab}
@@ -809,7 +817,7 @@ export default function App() {
             {isDemoMode() ? "Demo Mode" : "Casper Testnet"}
           </div>
         </div>
-        
+
         <div className="wallet-section">
           {walletAddr ? (
             <>
@@ -836,10 +844,10 @@ export default function App() {
             Caregiving, Verified<br />On-Chain
           </h1>
           <p className="hero-subtitle">
-            CareCircle coordinates caregiving tasks for families, elder care, and community volunteers — 
+            CareCircle coordinates caregiving tasks for families, elder care, and community volunteers —
             with verifiable task completion proofs recorded on the Casper blockchain.
           </p>
-          
+
           <div className="hero-features">
             <div className="hero-feature">
               <div className="hero-feature-icon">👥</div>
@@ -860,21 +868,21 @@ export default function App() {
           </div>
 
           <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-            <button 
+            <button
               className="btn btn-primary btn-lg"
               onClick={() => setShowCreateCircle(true)}
               disabled={!walletAddr}
             >
               Create New Circle
             </button>
-            <button 
+            <button
               className="btn btn-secondary btn-lg"
               onClick={() => setShowLoadCircle(true)}
             >
               Load Existing Circle
             </button>
           </div>
-          
+
           {!walletAddr && (
             <p className="text-muted text-sm mt-4">
               Connect your Casper wallet to create a circle, or load an existing one.
@@ -914,7 +922,7 @@ export default function App() {
                   Exit
                 </button>
               </div>
-              
+
               <div className="circle-info">
                 <div className="circle-avatar">💜</div>
                 <div className="circle-details">
@@ -937,14 +945,14 @@ export default function App() {
               )}
 
               <div className="circle-actions">
-                <button 
-                  className="btn btn-care" 
+                <button
+                  className="btn btn-care"
                   onClick={() => setShowAddTask(true)}
                   disabled={busy}
                 >
                   + Add Task
                 </button>
-                <button 
+                <button
                   className="btn btn-secondary"
                   onClick={() => setShowAddMember(true)}
                   disabled={busy || walletAddr.toLowerCase() !== circle.owner?.toLowerCase()}
@@ -980,7 +988,7 @@ export default function App() {
                   <span className="card-title-icon">📋</span>
                   Tasks
                 </h2>
-                
+
                 <div className="tasks-filters">
                   <button
                     className={`filter-btn ${filter === "all" ? "active" : ""}`}
@@ -1011,11 +1019,11 @@ export default function App() {
                     {filter === "all"
                       ? "Create your first task to start coordinating care activities."
                       : filter === "open"
-                      ? "All tasks have been completed! Great work."
-                      : "No completed tasks yet. Complete a task to see it here."}
+                        ? "All tasks have been completed! Great work."
+                        : "No completed tasks yet. Complete a task to see it here."}
                   </p>
                   {filter === "all" && (
-                    <button 
+                    <button
                       className="btn btn-care mt-4"
                       onClick={() => setShowAddTask(true)}
                     >
@@ -1072,10 +1080,10 @@ export default function App() {
       >
         <div className="modal-body">
           <p className="text-muted mb-4">
-            A Care Circle is a group of people coordinating caregiving activities. 
+            A Care Circle is a group of people coordinating caregiving activities.
             As the creator, you'll be the owner and can add members.
           </p>
-          
+
           <div className="input-group">
             <label>Circle Name</label>
             <input
@@ -1105,10 +1113,10 @@ export default function App() {
       >
         <div className="modal-body">
           <p className="text-muted mb-4">
-            Enter the ID of an existing circle to load it. You can find the circle ID 
+            Enter the ID of an existing circle to load it. You can find the circle ID
             from the owner or from a previous session.
           </p>
-          
+
           <div className="input-group">
             <label>Circle ID</label>
             <input
@@ -1167,7 +1175,7 @@ export default function App() {
 
           <div className="input-group mb-4">
             <label>Priority</label>
-            <select 
+            <select
               className="input"
               value={newTaskPriority}
               onChange={(e) => setNewTaskPriority(parseInt(e.target.value))}
@@ -1178,7 +1186,7 @@ export default function App() {
               <option value={3}>Urgent</option>
             </select>
           </div>
-          
+
           <div className="input-group">
             <label>Assign To (Casper Address)</label>
             <input
@@ -1210,10 +1218,10 @@ export default function App() {
       >
         <div className="modal-body">
           <p className="text-muted mb-4">
-            Add a family member, caregiver, or volunteer to your care circle. 
+            Add a family member, caregiver, or volunteer to your care circle.
             They'll be able to view tasks and complete assigned work.
           </p>
-          
+
           <div className="input-group">
             <label>Member's Casper Address</label>
             <input

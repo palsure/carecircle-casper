@@ -7,7 +7,21 @@ Built for **Casper Hackathon 2026** 🏆
 ![CareCircle Banner](https://img.shields.io/badge/Casper-Hackathon%202026-ff0012?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Smart%20Contract-Rust%20%2B%20Odra-orange?style=for-the-badge)
 ![React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61dafb?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Live%20on%20Cloud%20Run-brightgreen?style=for-the-badge)
+![Deployed](https://img.shields.io/badge/Deployed-Google%20Cloud-4285F4?style=for-the-badge)
+
+## 🌐 Live Demo
+
+**🚀 Try it now:** [https://carecircle-web-fozkypxpga-uc.a.run.app](https://carecircle-web-fozkypxpga-uc.a.run.app)
+
+**📚 API Docs:** [https://carecircle-api-fozkypxpga-uc.a.run.app/docs](https://carecircle-api-fozkypxpga-uc.a.run.app/docs)
+
+**Quick Start:**
+1. Visit the live demo URL
+2. Click "Load Existing Circle"
+3. Enter Circle ID: **1**
+4. Explore the demo tasks with on-chain proofs!
+5. Click the **?** button for help and user guides
 
 ---
 
@@ -60,7 +74,9 @@ CareCircle uses the Casper blockchain to:
 | **Explorer Links** | View transactions on Casper Testnet Explorer |
 | **Member Management** | Add/remove circle members with on-chain records |
 | **Event System** | Smart contract emits events for all activities |
+| **In-App Help** | Interactive help system with user guides and keyboard shortcuts |
 | **Swagger API Docs** | Full REST API documentation at `/docs` |
+| **Cloud Deployed** | Live on Google Cloud Run with auto-scaling |
 
 ---
 
@@ -465,13 +481,26 @@ carecircle-casper/
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Use Live Demo (Fastest)
+
+**No installation required!** Just visit:
+
+👉 **[https://carecircle-web-fozkypxpga-uc.a.run.app](https://carecircle-web-fozkypxpga-uc.a.run.app)**
+
+1. Click **"Load Existing Circle"**
+2. Enter Circle ID: **1**
+3. Explore demo tasks with on-chain proofs!
+4. Click **?** for help and user guides
+
+### Option 2: Run Locally
+
+#### Prerequisites
 
 - **Node.js** 18+ and npm
 - **Rust** nightly toolchain (for contract development)
 - **Casper Wallet** browser extension (optional, for live mode)
 
-### 1. Clone and Install
+#### 1. Clone and Install
 
 ```bash
 git clone <repository-url>
@@ -479,7 +508,7 @@ cd carecircle-casper
 npm install
 ```
 
-### 2. Start the API Server
+#### 2. Start the API Server
 
 ```bash
 cd apps/api
@@ -489,7 +518,7 @@ npm run dev
 # ✅ Swagger docs at http://localhost:3005/docs
 ```
 
-### 3. Start the Frontend
+#### 3. Start the Frontend
 
 ```bash
 cd apps/web
@@ -498,7 +527,7 @@ npm run dev
 # ✅ Frontend running at http://localhost:5173
 ```
 
-### 4. Seed Demo Data (Optional)
+#### 4. Seed Demo Data (Optional)
 
 ```bash
 chmod +x scripts/seed-demo.sh
@@ -506,7 +535,7 @@ chmod +x scripts/seed-demo.sh
 # Creates demo circle with 4 tasks
 ```
 
-### 5. Try It Out
+#### 5. Try It Out
 
 1. Open http://localhost:5173
 2. Click **"Load Existing Circle"** → Enter **1** → Load
@@ -587,7 +616,42 @@ Deploy to Casper Testnet to get your contract hash.
 
 ## 🔗 Deployment Guide
 
-### Step 1: Install Rust Toolchain
+### Current Deployment
+
+**Status:** ✅ Live on Google Cloud Run
+
+- **Frontend:** https://carecircle-web-fozkypxpga-uc.a.run.app
+- **Backend API:** https://carecircle-api-fozkypxpga-uc.a.run.app
+- **API Docs:** https://carecircle-api-fozkypxpga-uc.a.run.app/docs
+
+### Deploy to Google Cloud Run
+
+**Prerequisites:**
+- Google Cloud account with billing enabled
+- `gcloud` CLI installed and authenticated
+
+**Quick Deploy:**
+```bash
+# Set your project ID
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+
+# Run deployment script
+./scripts/quick-deploy.sh
+```
+
+The script will:
+1. Enable required Google Cloud APIs
+2. Build and deploy backend API
+3. Build and deploy frontend
+4. Output live URLs
+
+**Estimated time:** 5-10 minutes
+
+For detailed deployment instructions, see the [deployment guide](./scripts/README.md).
+
+### Smart Contract Deployment
+
+#### Step 1: Install Rust Toolchain
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -596,39 +660,30 @@ rustup default nightly-2025-02-15
 rustup target add wasm32-unknown-unknown
 ```
 
-### Step 2: Install Casper Client
+#### Step 2: Install Casper Client
 
 ```bash
 cargo install casper-client
 ```
 
-### Step 3: Generate Keys
+#### Step 3: Generate Keys
 
 ```bash
 casper-client keygen ./keys
 cat ./keys/public_key_hex  # Your public key
 ```
 
-### Step 4: Get Testnet CSPR
+#### Step 4: Get Testnet CSPR
 
 1. Visit https://testnet.cspr.live/tools/faucet
 2. Paste your public key
 3. Request tokens (~100 CSPR needed)
 
-### Step 5: Deploy Contract
+#### Step 5: Deploy Contract
 
 ```bash
 export CASPER_SECRET_KEY=./keys/secret_key.pem
 ./scripts/deploy-contract.sh
-```
-
-### Step 6: Configure Frontend
-
-Create `apps/web/.env`:
-```env
-VITE_CONTRACT_HASH=hash-<your-contract-hash>
-VITE_CASPER_NETWORK=casper-test
-VITE_API_URL=http://localhost:3005
 ```
 
 ---

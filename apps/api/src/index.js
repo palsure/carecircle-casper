@@ -4,6 +4,7 @@ import { z } from "zod";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import { openDb } from "./db.js";
+import { seed } from "./seed.js";
 
 const app = express();
 app.use(cors());
@@ -139,8 +140,8 @@ app.get("/", (_, res) => res.json({
  *                   type: string
  *                   format: date-time
  */
-app.get("/health", (_, res) => res.json({ 
-  ok: true, 
+app.get("/health", (_, res) => res.json({
+  ok: true,
   service: "CareCircle API",
   version: "1.0.0",
   timestamp: new Date().toISOString()
@@ -349,9 +350,9 @@ app.post("/members/upsert", (req, res) => {
         is_owner=excluded.is_owner,
         tx_hash=COALESCE(excluded.tx_hash, tx_hash)
     `).run(
-      input.circle_id, 
-      input.address, 
-      input.is_owner ? 1 : 0, 
+      input.circle_id,
+      input.address,
+      input.is_owner ? 1 : 0,
       input.tx_hash ?? null,
       Date.now()
     );
@@ -500,16 +501,16 @@ app.post("/tasks/upsert", (req, res) => {
         completed_at=excluded.completed_at,
         tx_hash=COALESCE(excluded.tx_hash, tx_hash)
     `).run(
-      t.id, 
-      t.circle_id, 
-      t.title, 
+      t.id,
+      t.circle_id,
+      t.title,
       t.description ?? null,
-      t.assigned_to, 
+      t.assigned_to,
       t.created_by,
       t.priority ?? 1,
-      t.completed ? 1 : 0, 
-      t.completed_by ?? null, 
-      t.completed_at ?? null, 
+      t.completed ? 1 : 0,
+      t.completed_by ?? null,
+      t.completed_at ?? null,
       t.tx_hash ?? null,
       Date.now()
     );
@@ -670,11 +671,11 @@ app.get("/tasks/assigned/:address", (req, res) => {
  */
 app.get("/circles/:id/stats", (req, res) => {
   const id = Number(req.params.id);
-  
+
   const totalTasks = db.prepare("SELECT COUNT(*) as count FROM tasks WHERE circle_id=?").get(id)?.count || 0;
   const completedTasks = db.prepare("SELECT COUNT(*) as count FROM tasks WHERE circle_id=? AND completed=1").get(id)?.count || 0;
   const memberCount = db.prepare("SELECT COUNT(*) as count FROM members WHERE circle_id=?").get(id)?.count || 0;
-  
+
   res.json({
     total_tasks: totalTasks,
     completed_tasks: completedTasks,
@@ -713,7 +714,7 @@ app.get("/stats", (_, res) => {
   const totalTasks = db.prepare("SELECT COUNT(*) as count FROM tasks").get()?.count || 0;
   const completedTasks = db.prepare("SELECT COUNT(*) as count FROM tasks WHERE completed=1").get()?.count || 0;
   const totalMembers = db.prepare("SELECT COUNT(DISTINCT address) as count FROM members").get()?.count || 0;
-  
+
   res.json({
     total_circles: totalCircles,
     total_tasks: totalTasks,
@@ -733,6 +734,13 @@ app.use((err, req, res, next) => {
 
 const port = Number(process.env.PORT || 3005);
 app.listen(port, () => {
+  // Auto-seed database if empty (for demo purposes)
+  const circleCount = db.prepare("SELECT COUNT(*) as count FROM circles").get()?.count || 0;
+  if (circleCount === 0) {
+    console.log("📦 Database is empty, seeding with demo data...");
+    seed(db);
+  }
+
   console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║  CareCircle API Server                                        ║

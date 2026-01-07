@@ -56,6 +56,48 @@ if (CasperClient) {
 let connectedPublicKey = null;
 let connectedPublicKeyObj = null;
 
+export const CASPER_WALLET_NOT_DETECTED = "CASPER_WALLET_NOT_DETECTED";
+
+/**
+ * Get a suggested demo wallet public key (from localStorage or env default)
+ */
+export function getDemoWalletSuggestion() {
+  const savedWallet = localStorage.getItem("carecircle_wallet");
+  const defaultWallet =
+    import.meta.env.VITE_DEFAULT_WALLET ||
+    "0202b40ddeb748ccc6f80048bb6e0f2be1969dc528600390224557eb05c0e0f8844d";
+
+  return {
+    savedWallet,
+    defaultWallet,
+    suggestedPublicKey: (savedWallet || defaultWallet || "").trim(),
+  };
+}
+
+/**
+ * Set wallet state from a manually provided public key (demo/dev mode)
+ */
+export function connectWithPublicKey(publicKeyHex) {
+  const addr = (publicKeyHex || "").trim();
+  if (!addr || addr.length < 64) {
+    throw new Error("Invalid Casper public key");
+  }
+
+  connectedPublicKey = addr;
+  if (CLPublicKey) {
+    try {
+      connectedPublicKeyObj = CLPublicKey.fromHex(connectedPublicKey);
+    } catch {
+      connectedPublicKeyObj = null;
+    }
+  }
+
+  // Mark as manual key entry (demo mode)
+  isWalletExtensionConnected = false;
+
+  return connectedPublicKey;
+}
+
 /**
  * Check if Casper Wallet extension is installed
  */
@@ -81,7 +123,12 @@ function getCasperWallet() {
  * Connect wallet using Casper Wallet extension
  * @returns {Promise<string>} Connected wallet public key (hex)
  */
-export async function connectWallet() {
+export async function connectWallet(opts = {}) {
+  const { manualPublicKey } = opts || {};
+  if (manualPublicKey) {
+    return connectWithPublicKey(manualPublicKey);
+  }
+
   // Try Casper Wallet extension first
   if (hasCasperWallet()) {
     try {
@@ -100,6 +147,9 @@ export async function connectWallet() {
         connectedPublicKeyObj = CLPublicKey.fromHex(publicKeyHex);
       }
       
+      // Mark as extension-connected (real wallet)
+      isWalletExtensionConnected = true;
+      
       console.log("✅ Connected to Casper Wallet:", formatAddress(publicKeyHex));
       return publicKeyHex;
     } catch (err) {
@@ -111,38 +161,14 @@ export async function connectWallet() {
   // Fallback: Manual entry for development/demo
   console.warn("Casper Wallet not found. Using manual entry mode.");
   
-  // Try to get from environment or localStorage first
-  const savedWallet = localStorage.getItem("carecircle_wallet");
-  const defaultWallet = import.meta.env.VITE_DEFAULT_WALLET || 
-    "0202b40ddeb748ccc6f80048bb6e0f2be1969dc528600390224557eb05c0e0f8844d";
-  
-  let addr;
-  try {
-    addr = window.prompt(
-      "Casper Wallet not detected.\n\nTo use live blockchain:\n1. Install Casper Wallet extension\n2. Refresh this page\n\nFor demo mode, enter a Casper public key:",
-      savedWallet || defaultWallet
-    );
-  } catch (e) {
-    // Prompt blocked - use default
-    addr = savedWallet || defaultWallet;
-  }
-  
-  // If prompt was cancelled or empty, use the default wallet
-  if (!addr || addr.length < 64) {
-    addr = defaultWallet;
-    console.log("Using default demo wallet:", addr.slice(0, 16) + "...");
-  }
-  
-  connectedPublicKey = addr.trim();
-  if (CLPublicKey) {
-    try {
-      connectedPublicKeyObj = CLPublicKey.fromHex(connectedPublicKey);
-    } catch {
-      connectedPublicKeyObj = null;
-    }
-  }
-  
-  return connectedPublicKey;
+  const { suggestedPublicKey, defaultWallet } = getDemoWalletSuggestion();
+  const err = new Error(
+    "Casper Wallet not detected. Install the extension or enter a public key to use demo mode."
+  );
+  err.code = CASPER_WALLET_NOT_DETECTED;
+  err.suggestedPublicKey = suggestedPublicKey;
+  err.defaultWallet = defaultWallet;
+  throw err;
 }
 
 /**
@@ -159,6 +185,7 @@ export async function disconnectWallet() {
   }
   connectedPublicKey = null;
   connectedPublicKeyObj = null;
+  isWalletExtensionConnected = false;
 }
 
 /**
@@ -395,6 +422,56 @@ export async function getCircleFromChain(circleId) {
 }
 
 /**
+ * Transfer CSPR tokens from sender to recipient
+ * @param {Object} params - { recipientAddress: string, amountMotes: string }
+ * @returns {Promise<{txHash: string}>}
+ */
+export async function transferCSPR({ recipientAddress, amountMotes }) {
+  if (!connectedPublicKey) throw new Error("Wallet not connected");
+  
+  if (CONTRACT_CONFIG.contractHash && hasCasperWallet() && connectedPublicKeyObj) {
+    try {
+      console.log(`💰 Transferring ${(parseInt(amountMotes) / 1_000_000_000).toFixed(2)} CSPR to ${formatAddress(recipientAddress)}...`);
+      
+      // Create a transfer deploy
+      const recipientPublicKey = CLPublicKey.fromHex(recipientAddress);
+      const transferAmount = amountMotes; // Amount in motes
+      
+      const deploy = DeployUtil.makeDeploy(
+        new DeployUtil.DeployParams(
+          connectedPublicKeyObj,
+          CONTRACT_CONFIG.networkName,
+          1, // gas price
+          1800000 // TTL: 30 minutes
+        ),
+        DeployUtil.ExecutableDeployItem.newTransfer(
+          transferAmount,
+          recipientPublicKey,
+          null, // transfer ID (optional)
+          Uint8Array.from([]) // extra data (optional)
+        ),
+        DeployUtil.standardPayment("1000000000") // 1 CSPR for gas
+      );
+      
+      const deployHash = await signAndSubmitDeploy(deploy);
+      await waitForDeploy(deployHash);
+      
+      console.log(`✅ Transfer completed: ${deployHash}`);
+      return { txHash: deployHash };
+    } catch (err) {
+      console.error("Transfer failed:", err);
+      throw new Error("Failed to transfer CSPR: " + (err.message || String(err)));
+    }
+  }
+  
+  // Fallback: Demo mode
+  const demoTxHash = generateDemoTxHash();
+  console.log(`[Demo Mode] Transfer ${(parseInt(amountMotes) / 1_000_000_000).toFixed(2)} CSPR to ${formatAddress(recipientAddress)}`);
+  
+  return { txHash: demoTxHash };
+}
+
+/**
  * Get task info from chain (read-only)
  */
 export async function getTaskFromChain(taskId) {
@@ -569,11 +646,53 @@ export function formatAddress(addr, startLen = 8, endLen = 6) {
   return `${addr.slice(0, startLen)}...${addr.slice(-endLen)}`;
 }
 
+// Track if wallet was connected via extension (real) or manual key (demo)
+let isWalletExtensionConnected = false;
+
 /**
- * Check if we're in demo mode (no real contract deployed)
+ * Check if we're in demo mode (no real contract deployed OR using manual key entry)
+ * This is a synchronous check for UI purposes
+ * Note: This should be used with isAccountLive state from React component for accurate status
+ * The isAccountLive state from the API response is the source of truth for UI display
+ * @returns {boolean} True if in demo mode
  */
 export function isDemoMode() {
-  return !CONTRACT_CONFIG.contractHash;
+  // If contract hash is not set, we're in demo mode for on-chain operations
+  // But UI should use isAccountLive state to determine if account is live
+  if (!CONTRACT_CONFIG.contractHash) return true;
+  
+  // If wallet was connected via manual key entry (not extension), we're in demo mode
+  // But if account is live (checked via API), it's not demo mode
+  // Note: isAccountLive state in React component should override this for UI display
+  if (!isWalletExtensionConnected) return true;
+  
+  return false;
+}
+
+/**
+ * Check if account is live and update connection status accordingly
+ * @param {string} publicKeyHex - Public key to check
+ * @returns {Promise<boolean>} True if account is live
+ */
+export async function checkAndUpdateAccountStatus(publicKeyHex) {
+  if (!publicKeyHex || isWalletExtensionConnected) return isWalletExtensionConnected;
+  
+  // Check if account exists on blockchain
+  const isLive = await isAccountLive(publicKeyHex);
+  if (isLive) {
+    // Account is live, so update connection status
+    isWalletExtensionConnected = true;
+    console.log("Account verified as live on blockchain");
+  }
+  
+  return isLive;
+}
+
+/**
+ * Check if wallet is connected via extension (real wallet)
+ */
+export function isWalletExtensionMode() {
+  return isWalletExtensionConnected && hasCasperWallet();
 }
 
 /**
@@ -581,4 +700,148 @@ export function isDemoMode() {
  */
 export function getContractConfig() {
   return { ...CONTRACT_CONFIG };
+}
+
+/**
+ * Check if account is live (exists on blockchain) by querying via backend proxy
+ * @param {string} publicKeyHex - Public key in hex format
+ * @returns {Promise<boolean>} True if account exists on blockchain
+ */
+export async function isAccountLive(publicKeyHex) {
+  if (!publicKeyHex) return false;
+  
+  try {
+    // Use backend proxy to avoid CORS issues
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3005";
+    const response = await fetch(`${apiUrl}/accounts/${publicKeyHex}/balance`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.isLive === true;
+    } else if (response.status === 404) {
+      return false;
+    }
+  } catch (err) {
+    console.warn("Failed to check if account is live:", err);
+  }
+  
+  return false;
+}
+
+/**
+ * Get account balance from Casper blockchain
+ * @param {string} publicKeyHex - Public key in hex format
+ * @returns {Promise<string>} Balance in CSPR (as string to preserve precision)
+ */
+export async function getAccountBalance(publicKeyHex) {
+  if (!publicKeyHex) return { balance: "0", isLive: false };
+  
+  // Always try to fetch via proxy first (works for both extension and manual key entries)
+  // This allows the app to work without the extension installed
+  try {
+    // Method 1: Try backend proxy first (avoids CORS issues)
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3005";
+    const proxyResponse = await fetch(`${apiUrl}/accounts/${publicKeyHex}/balance`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    });
+    
+    if (proxyResponse.ok) {
+      const data = await proxyResponse.json();
+      if (data.balance !== undefined) {
+        const isLive = data.isLive === true;
+        // If account is live, update connection status (works even without extension)
+        if (isLive) {
+          isWalletExtensionConnected = true;
+        }
+        return { balance: String(data.balance), isLive: isLive };
+      }
+    } else if (proxyResponse.status === 404) {
+      // Account not found - return 0 balance and not live
+      console.log("❌ Account not found (404)");
+      return { balance: "0", isLive: false };
+    }
+  } catch (err) {
+    console.warn("Failed to fetch balance via proxy:", err);
+  }
+  
+  // Fallback: Try other methods only if extension is available
+  const hasExtension = hasCasperWallet();
+  if (!hasExtension && !isWalletExtensionConnected) {
+    // No extension and proxy failed - return demo mode
+    return { balance: "0", isLive: false };
+  }
+  
+  try {
+    
+    // Method 2: Use CasperClient if available
+    if (casperClient && CLPublicKey) {
+      try {
+        const publicKey = CLPublicKey.fromHex(publicKeyHex);
+        const balance = await casperClient.balanceOfByPublicKey(publicKey);
+        // Convert from motes (1 CSPR = 1,000,000,000 motes) to CSPR
+        const csprBalance = (Number(balance) / 1_000_000_000).toFixed(2);
+        // If we got balance from CasperClient, account is live
+        return { balance: csprBalance, isLive: true };
+      } catch (err) {
+        console.warn("Failed to fetch balance via CasperClient:", err);
+      }
+    }
+    
+    // Method 3: Fallback to RPC call to get account info and then balance
+    try {
+      // First, get account info to get the main purse URef
+      const accountResponse = await fetch(CONTRACT_CONFIG.nodeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "state_get_account_info",
+          params: {
+            state_root_hash: "latest",
+            public_key: publicKeyHex
+          }
+        })
+      });
+      
+      const accountData = await accountResponse.json();
+      if (accountData.result?.account?.main_purse) {
+        // Get balance from main purse
+        const purseUref = accountData.result.account.main_purse;
+        const balanceResponse = await fetch(CONTRACT_CONFIG.nodeUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "state_get_balance",
+            params: {
+              state_root_hash: "latest",
+              purse_uref: purseUref
+            }
+          })
+        });
+        
+        const balanceData = await balanceResponse.json();
+        if (balanceData.result?.balance_value) {
+          const motes = balanceData.result.balance_value;
+          const csprBalance = (Number(motes) / 1_000_000_000).toFixed(2);
+          // If we got balance from RPC, account is live
+          return { balance: csprBalance, isLive: true };
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch balance via RPC:", err);
+    }
+    
+    // Return 0 if all methods fail
+    return { balance: "0", isLive: false };
+  } catch (err) {
+    console.error("Error fetching balance:", err);
+    return { balance: "0", isLive: false };
+  }
 }

@@ -347,12 +347,19 @@ export async function createTaskOnChain({ circleId, title, assignedTo }) {
  * @returns {Promise<{txHash: string, timestamp: number}>}
  */
 export async function completeTaskOnChain({ taskId }) {
-  if (!connectedPublicKey) throw new Error("Wallet not connected");
+  // Check if wallet is connected (either via extension or manual key)
+  if (!connectedPublicKey) {
+    throw new Error("Wallet not connected. Please connect your wallet first.");
+  }
+  
+  console.log(`🔗 Completing task ${taskId} on blockchain...`);
+  console.log(`   Connected wallet: ${formatAddress(connectedPublicKey)}`);
+  console.log(`   Contract hash: ${CONTRACT_CONFIG.contractHash || "Not set (demo mode)"}`);
+  console.log(`   Has wallet extension: ${hasCasperWallet()}`);
+  console.log(`   Connected public key obj: ${connectedPublicKeyObj ? "Yes" : "No"}`);
   
   if (CONTRACT_CONFIG.contractHash && hasCasperWallet() && connectedPublicKeyObj) {
     try {
-      console.log(`🔗 Completing task ${taskId} on blockchain...`);
-      
       const deploy = await buildContractDeploy({
         entryPoint: "complete_task",
         args: {
@@ -375,9 +382,17 @@ export async function completeTaskOnChain({ taskId }) {
     }
   }
   
-  // Fallback: Demo mode
+  // Fallback: Demo mode (when contract not deployed or wallet extension not available)
+  if (!CONTRACT_CONFIG.contractHash) {
+    console.log(`[Demo Mode] Contract not deployed - simulating task completion`);
+  } else if (!hasCasperWallet()) {
+    console.log(`[Demo Mode] Wallet extension not available - simulating task completion`);
+  } else if (!connectedPublicKeyObj) {
+    console.log(`[Demo Mode] Public key object not available - simulating task completion`);
+  }
+  
   const demoTxHash = generateDemoTxHash();
-  console.log(`[Demo Mode] Completed task ${taskId}`);
+  console.log(`[Demo Mode] Completed task ${taskId} - Deploy hash: ${demoTxHash}`);
   
   return { 
     txHash: demoTxHash,
@@ -426,16 +441,46 @@ export async function getCircleFromChain(circleId) {
  * @param {Object} params - { recipientAddress: string, amountMotes: string }
  * @returns {Promise<{txHash: string}>}
  */
-export async function transferCSPR({ recipientAddress, amountMotes }) {
-  if (!connectedPublicKey) throw new Error("Wallet not connected");
+export async function transferCSPR({ recipientAddress, amountMotes, openWalletUI = true }) {
+  if (!connectedPublicKey) {
+    throw new Error("Wallet not connected. Please ensure your wallet is connected before transferring.");
+  }
   
-  if (CONTRACT_CONFIG.contractHash && hasCasperWallet() && connectedPublicKeyObj) {
+  // Calculate amount in CSPR for display
+  const amountCSPR = (parseInt(amountMotes) / 1_000_000_000).toFixed(2);
+  
+  console.log(`💰 Preparing transfer: ${amountCSPR} CSPR`);
+  console.log(`   Sender: ${connectedPublicKey}`);
+  console.log(`   Recipient: ${recipientAddress}`);
+  console.log(`   Has wallet extension: ${hasCasperWallet()}`);
+  console.log(`   Connected public key obj: ${connectedPublicKeyObj ? "Yes" : "No"}`);
+  
+  // Open Casper Wallet transfer interface if requested
+  if (openWalletUI && hasCasperWallet()) {
     try {
-      console.log(`💰 Transferring ${(parseInt(amountMotes) / 1_000_000_000).toFixed(2)} CSPR to ${formatAddress(recipientAddress)}...`);
+      // Open transfer page in new tab with details
+      const transferUrl = `https://testnet.cspr.live/transfer`;
+      window.open(transferUrl, '_blank');
+      console.log(`📂 Opened transfer page: ${transferUrl}`);
+    } catch (err) {
+      console.warn("Could not open transfer page:", err);
+    }
+  }
+  
+  // Native CSPR transfers don't require a contract hash, only wallet connection
+  if (hasCasperWallet() && connectedPublicKeyObj) {
+    try {
+      // Ensure amount is a string (motes are stored as strings)
+      const transferAmountStr = String(amountMotes);
+      const transferAmount = BigInt(transferAmountStr);
+      
+      console.log(`💰 Transferring ${amountCSPR} CSPR to ${formatAddress(recipientAddress)}...`);
+      console.log(`   Amount in motes: ${transferAmountStr}`);
+      console.log(`   Sender: ${connectedPublicKey}`);
+      console.log(`   Recipient: ${recipientAddress}`);
       
       // Create a transfer deploy
       const recipientPublicKey = CLPublicKey.fromHex(recipientAddress);
-      const transferAmount = amountMotes; // Amount in motes
       
       const deploy = DeployUtil.makeDeploy(
         new DeployUtil.DeployParams(
@@ -453,7 +498,17 @@ export async function transferCSPR({ recipientAddress, amountMotes }) {
         DeployUtil.standardPayment("1000000000") // 1 CSPR for gas
       );
       
+      console.log(`📤 Opening Casper Wallet to sign transfer...`);
+      console.log(`   The Casper Wallet extension should now open for you to sign the transfer.`);
+      console.log(`   Please check your browser for the wallet popup.`);
+      
+      // This will open the Casper Wallet extension UI for signing
+      // The wallet.sign() call inside signAndSubmitDeploy will trigger the wallet popup
       const deployHash = await signAndSubmitDeploy(deploy);
+      console.log(`📤 Deploy submitted: ${deployHash}`);
+      console.log(`✅ Transfer signed and submitted!`);
+      
+      console.log(`⏳ Waiting for deploy execution...`);
       await waitForDeploy(deployHash);
       
       console.log(`✅ Transfer completed: ${deployHash}`);
@@ -464,11 +519,30 @@ export async function transferCSPR({ recipientAddress, amountMotes }) {
     }
   }
   
-  // Fallback: Demo mode
+  // Fallback: Demo mode (when wallet extension not available)
   const demoTxHash = generateDemoTxHash();
-  console.log(`[Demo Mode] Transfer ${(parseInt(amountMotes) / 1_000_000_000).toFixed(2)} CSPR to ${formatAddress(recipientAddress)}`);
+  console.log(`[Demo Mode] Transfer ${amountCSPR} CSPR to ${formatAddress(recipientAddress)}`);
+  console.warn("⚠️ Demo mode: No actual transfer occurred. Connect Casper Wallet for real transfers.");
   
   return { txHash: demoTxHash };
+}
+
+/**
+ * Open Casper Wallet transfer interface with pre-filled details
+ */
+export function openCasperTransferUI({ senderAddress, recipientAddress, amountCSPR }) {
+  const transferUrl = `https://testnet.cspr.live/transfer`;
+  const transferWindow = window.open(transferUrl, '_blank');
+  
+  // Show transfer details in console and potentially in a modal
+  console.log(`💸 Opening Casper Transfer Interface`);
+  console.log(`   Sender: ${senderAddress}`);
+  console.log(`   Recipient: ${recipientAddress}`);
+  console.log(`   Amount: ${amountCSPR} CSPR`);
+  console.log(`   Transfer URL: ${transferUrl}`);
+  
+  // Note: The transfer page won't auto-fill, but we can show the details
+  return transferWindow;
 }
 
 /**
@@ -757,7 +831,11 @@ export async function getAccountBalance(publicKeyHex) {
         if (isLive) {
           isWalletExtensionConnected = true;
         }
-        return { balance: String(data.balance), isLive: isLive };
+        return { 
+          balance: String(data.balance), 
+          isLive: isLive,
+          mainPurseUref: data.mainPurseUref || null
+        };
       }
     } else if (proxyResponse.status === 404) {
       // Account not found - return 0 balance and not live

@@ -4,17 +4,25 @@ import path from "path";
 
 export function openDb(filename = "carecircle-application.db") {
   try {
-    // Use /tmp directory for Vercel serverless functions (only writable location)
+    // Determine database path based on environment
     let dbPath;
     if (process.env.VERCEL || process.env.VERCEL_ENV) {
-      // Ensure /tmp directory exists
+      // Vercel: Use /tmp (ephemeral)
       const tmpDir = "/tmp";
       if (!fs.existsSync(tmpDir)) {
         fs.mkdirSync(tmpDir, { recursive: true });
       }
       dbPath = path.join(tmpDir, filename);
+    } else if (process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT) {
+      // Railway: Use persistent volume or data directory
+      const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/app/data";
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      dbPath = path.join(dataDir, filename);
     } else {
-      dbPath = filename;
+      // Local development or other platforms
+      dbPath = process.env.DB_FILE || filename;
     }
     
     console.log(`[DB] Opening database at: ${dbPath}`);

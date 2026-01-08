@@ -16,14 +16,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Use /tmp for Vercel (only writable location), or custom path from env, or default
+// Determine database filename based on environment
 let db;
 try {
-  const dbFilename = process.env.VERCEL || process.env.VERCEL_ENV
-    ? "carecircle-application.db"  // Just filename, db.js will handle /tmp path
-    : (process.env.DB_FILE || "carecircle-application.db");
+  let dbFilename;
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    // Vercel: Just filename, db.js will handle /tmp path
+    dbFilename = "carecircle-application.db";
+  } else if (process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT) {
+    // Railway: Use DB_FILE env var or default to /app/data
+    dbFilename = process.env.DB_FILE || "carecircle-application.db";
+  } else {
+    // Local or other platforms: Use DB_FILE env var or default
+    dbFilename = process.env.DB_FILE || "carecircle-application.db";
+  }
+  
   db = openDb(dbFilename);
   console.log(`[API] Database initialized: ${dbFilename}`);
+  console.log(`[API] Environment: ${process.env.RAILWAY ? 'Railway' : process.env.VERCEL ? 'Vercel' : 'Local'}`);
 } catch (error) {
   console.error(`[API] Failed to initialize database:`, error);
   // Continue without database - endpoints will handle errors gracefully

@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "build": "echo 'No build step required for Vercel'"
+    "start": "node src/index.js",
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",

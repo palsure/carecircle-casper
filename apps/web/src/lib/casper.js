@@ -515,13 +515,30 @@ export async function transferCSPR({ recipientAddress, amountMotes, openWalletUI
         transferAmount = BigInt(cleanAmount);
         transferAmountStr = cleanAmount;
       } else {
-        // For numbers, convert to string first to avoid precision loss
-        const numAmount = Number(amountMotes);
-        if (isNaN(numAmount) || numAmount <= 0) {
-          throw new Error("Invalid payment amount: must be a positive number");
+        // For numbers or BigInt, convert to string first to avoid precision loss
+        // Handle BigInt by converting to string first
+        let amountStr;
+        if (typeof amountMotes === 'bigint') {
+          amountStr = amountMotes.toString();
+        } else if (typeof amountMotes === 'number') {
+          // For very large numbers, use BigInt-safe conversion
+          if (amountMotes > Number.MAX_SAFE_INTEGER) {
+            // Convert to string and use BigInt
+            amountStr = amountMotes.toLocaleString('fullwide', { useGrouping: false });
+          } else {
+            amountStr = Math.floor(amountMotes).toString();
+          }
+        } else {
+          amountStr = String(amountMotes);
         }
-        transferAmountStr = Math.floor(numAmount).toString();
-        transferAmount = BigInt(transferAmountStr);
+        
+        // Remove any non-numeric characters
+        const cleanAmount = amountStr.replace(/[^0-9]/g, '');
+        if (!cleanAmount || cleanAmount === '0') {
+          throw new Error("Invalid payment amount: must be greater than 0");
+        }
+        transferAmount = BigInt(cleanAmount);
+        transferAmountStr = cleanAmount;
       }
       
       console.log(`💰 Transferring ${amountCSPR} CSPR to ${formatAddress(recipientAddress)}...`);

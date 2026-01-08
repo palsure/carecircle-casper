@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use install since no package-lock.json)
-RUN npm install --production
+# Install dependencies (better-sqlite3 needs build tools)
+RUN npm install
 
 # Copy source code
 COPY src/ ./src/
@@ -16,12 +16,13 @@ COPY src/ ./src/
 # Create directory for SQLite database
 RUN mkdir -p /app/data
 
-# Expose port
-EXPOSE 8080
+# Expose port (Railway uses PORT env var, defaults to 3005)
+EXPOSE 3005
 
-# Set environment variable for port (Cloud Run uses PORT=8080)
-ENV PORT=8080
+# Set default environment variables
+ENV PORT=3005
 ENV NODE_ENV=production
+ENV DB_FILE=/app/data/carecircle-application.db
 
 # Start the server
 CMD ["node", "src/index.js"]

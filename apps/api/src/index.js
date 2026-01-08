@@ -6,6 +6,11 @@ import swaggerJsdoc from "swagger-jsdoc";
 import { openDb } from "./db.js";
 import nodemailer from "nodemailer";
 import crypto from "node:crypto";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -68,9 +73,15 @@ with **verifiable task completion proofs** recorded on the Casper blockchain.
     },
     servers: [
       {
+        url: process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}`
+          : (process.env.API_URL || "http://localhost:3005"),
+        description: process.env.VERCEL_URL ? "Production Server (Vercel)" : "Local Development Server"
+      },
+      ...(process.env.VERCEL_URL ? [] : [{
         url: "http://localhost:3005",
         description: "Local Development Server"
-      }
+      }])
     ],
     tags: [
       { name: "Health", description: "Service health endpoints" },
@@ -80,13 +91,37 @@ with **verifiable task completion proofs** recorded on the Casper blockchain.
       { name: "Stats", description: "Analytics and statistics" }
     ]
   },
-  apis: ["./src/index.js"]
+  apis: [
+    join(__dirname, "index.js"),  // Use absolute path to current file
+    join(__dirname, "*.js")        // Include all JS files in src directory
+  ]
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
+let swaggerSpec;
+try {
+  console.log(`[Swagger] Generating spec from:`, swaggerOptions.apis);
+  swaggerSpec = swaggerJsdoc(swaggerOptions);
+  const pathCount = Object.keys(swaggerSpec.paths || {}).length;
+  console.log(`[Swagger] Generated spec successfully with ${pathCount} paths`);
+} catch (error) {
+  console.error(`[Swagger] Failed to generate spec:`, error);
+  console.error(`[Swagger] Error details:`, error.stack);
+  // Create a minimal spec if generation fails
+  swaggerSpec = {
+    openapi: "3.0.0",
+    info: {
+      title: "CareCircle API",
+      version: "1.0.0",
+      description: `API documentation generation failed: ${error.message}. Check server logs.`
+    },
+    paths: {}
+  };
+}
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "CareCircle API Documentation"
+  customSiteTitle: "CareCircle API Documentation",
+  explorer: true
 }));
 
 // ==================== Root & Health Check ====================

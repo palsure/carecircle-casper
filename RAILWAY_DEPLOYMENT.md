@@ -32,8 +32,9 @@ Railway is an excellent choice for deploying CareCircle because it supports **pe
 2. **Add API Service**
    - Click "New" → "GitHub Repo"
    - Select your repository
-   - Set **Root Directory**: `apps/api`
-   - Railway will auto-detect the Dockerfile
+   - ⚠️ **IMPORTANT**: Set **Root Directory** to `apps/api`
+   - Railway will auto-detect the Dockerfile in that directory
+   - If Root Directory is not set correctly, the build will fail with "src not found" error
 
 3. **Configure Service**
    - Railway will build from `apps/api/Dockerfile`

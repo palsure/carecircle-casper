@@ -30,7 +30,9 @@ try {
     dbFilename = process.env.DB_FILE || "carecircle-application.db";
   } else if (process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT) {
     // Railway: Just filename, db.js will handle /app/data path
+    // IMPORTANT: Ensure a volume is mounted at /app/data in Railway for persistence
     dbFilename = process.env.DB_FILE || "carecircle-application.db";
+    console.log(`[API] Railway environment detected. Database will use /app/data (ensure volume is mounted)`);
   } else {
     // Local or other platforms: Use DB_FILE env var or default
     dbFilename = process.env.DB_FILE || "carecircle-application.db";

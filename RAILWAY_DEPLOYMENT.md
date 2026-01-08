@@ -41,11 +41,14 @@ Railway is an excellent choice for deploying CareCircle because it supports **pe
    - Set environment variables (see below)
    - Add a persistent volume for database (optional but recommended)
 
-4. **Add Persistent Volume (Recommended)**
+4. **Add Persistent Volume (REQUIRED for Data Persistence)**
+   - ⚠️ **CRITICAL**: Without a volume, database will be lost on each deployment
    - Go to service settings
    - Click "Volumes" → "Add Volume"
-   - Mount path: `/app/data`
-   - This ensures database persists
+   - **Mount path**: `/app/data` (must match DB_FILE path)
+   - **Volume name**: `carecircle-db` (or any name)
+   - This ensures database persists across deployments
+   - **Verify**: After adding, check that the volume appears in the service settings
 
 5. **Set Environment Variables**
    ```

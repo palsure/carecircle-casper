@@ -135,7 +135,7 @@ function HelpPanel({ activeTab, setActiveTab, maxHeight }) {
                   <ol className="get-started-list">
                     <li>Connect your wallet (or use demo mode)</li>
                     <li>Create a new circle or load an existing one</li>
-                    <li>Add members to your circle</li>
+                <li>Add members to your circle</li>
                     <li>Create task requests or money requests</li>
                     <li>Complete tasks or accept/reject money requests</li>
                     <li>Payments are processed automatically with on-chain verification</li>
@@ -464,12 +464,44 @@ function StatCard({ icon, value, label }) {
 
 // ==================== Task Card ====================
 function TaskCard({ task, onComplete, walletAddr, busy, onViewDetails, onMakePayment, onReject, members = [], mainPurseUref = null, addToast = () => {} }) {
-  const isAssigned = task.assigned_to && task.assigned_to.trim() !== "";
-  const isAssignee = isAssigned && walletAddr?.toLowerCase() === task.assigned_to?.toLowerCase();
-  const isCreator = walletAddr?.toLowerCase() === task.created_by?.toLowerCase();
+  // Normalize addresses for comparison (trim and lowercase)
+  const normalizeAddress = (addr) => {
+    if (!addr) return "";
+    return String(addr).trim().toLowerCase();
+  };
+  
+  const walletAddrNormalized = normalizeAddress(walletAddr);
+  const assignedToNormalized = normalizeAddress(task.assigned_to);
+  const createdByNormalized = normalizeAddress(task.created_by);
+  
+  const isAssigned = assignedToNormalized !== "";
+  const isAssignee = isAssigned && walletAddrNormalized && walletAddrNormalized === assignedToNormalized;
+  const isCreator = walletAddrNormalized && walletAddrNormalized === createdByNormalized;
   const isRequestMoney = task.request_money === 1 || task.request_money === true;
+  
+  // Allow completion/accept/reject if:
+  // 1. Task is not completed
+  // 2. User is the assignee
+  // 3. Wallet is connected (required for on-chain operations)
   const canComplete = !task.completed && isAssignee && !isRequestMoney; // Regular tasks only
   const canAcceptReject = !task.completed && isAssignee && isRequestMoney; // Money requests only
+  
+  // Debug logging (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[TaskCard ${task.id}]`, {
+      walletAddr: walletAddrNormalized?.substring(0, 10) + "..." || "not set",
+      assignedTo: assignedToNormalized?.substring(0, 10) + "..." || "not set",
+      createdBy: createdByNormalized?.substring(0, 10) + "..." || "not set",
+      isAssigned,
+      isAssignee,
+      isCreator,
+      isRequestMoney,
+      completed: task.completed,
+      canComplete,
+      canAcceptReject,
+      hasWalletAddr: !!walletAddr
+    });
+  }
   // Show "Make Payment" button to creator for completed task requests (not money requests) with payment
   // Hide button if payment_tx_hash exists (payment already made) or if it's a money request
   const canMakePayment = task.completed && isCreator && !isRequestMoney && task.payment_amount && task.payment_amount.trim() !== "" && task.payment_amount !== "0" && !task.payment_tx_hash;
@@ -791,10 +823,20 @@ function TaskCard({ task, onComplete, walletAddr, busy, onViewDetails, onMakePay
         )}
 
         {!task.completed && !isAssignee && walletAddr && isAssigned && (
-          <span className="text-xs text-muted">Only assignee can complete</span>
+          <span className="text-xs text-muted">
+            Only assignee can complete
+            {process.env.NODE_ENV === 'development' && (
+              <span style={{ display: "block", fontSize: "0.65rem", marginTop: "4px" }}>
+                Wallet: {walletAddrNormalized?.substring(0, 12)}... | Assigned: {assignedToNormalized?.substring(0, 12)}...
+              </span>
+            )}
+          </span>
         )}
         {!task.completed && !isAssigned && (
           <span className="text-xs text-muted">Task must be assigned before completion</span>
+        )}
+        {!task.completed && !walletAddr && (
+          <span className="text-xs text-muted">Connect wallet to complete tasks</span>
         )}
       </div>
     </div>

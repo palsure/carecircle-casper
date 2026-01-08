@@ -524,17 +524,42 @@ function TaskCard({ task, onComplete, walletAddr, busy, onViewDetails, onMakePay
   // Show "Make Payment" button to creator for completed task requests (not money requests) with payment
   // Hide button if payment_tx_hash exists (payment already made) or if it's a money request
   // Check if payment_tx_hash exists and is not empty/null
-  const hasPaymentTxHash = task.payment_tx_hash && 
-                            String(task.payment_tx_hash).trim() !== "" && 
-                            String(task.payment_tx_hash).toLowerCase() !== "null" &&
-                            String(task.payment_tx_hash).toLowerCase() !== "undefined";
+  // More robust check to handle all edge cases
+  const paymentTxHash = task.payment_tx_hash;
+  const hasPaymentTxHash = paymentTxHash !== null && 
+                            paymentTxHash !== undefined &&
+                            String(paymentTxHash).trim() !== "" && 
+                            String(paymentTxHash).toLowerCase() !== "null" &&
+                            String(paymentTxHash).toLowerCase() !== "undefined" &&
+                            String(paymentTxHash).toLowerCase() !== "0";
+  
+  // Only show Make Payment if:
+  // 1. Task is completed
+  // 2. User is the creator
+  // 3. It's NOT a money request (money requests don't have Make Payment for creator)
+  // 4. Payment amount exists and is not zero
+  // 5. Payment has NOT been made yet (no payment_tx_hash)
   const canMakePayment = task.completed && 
                          isCreator && 
                          !isRequestMoney && 
                          task.payment_amount && 
-                         task.payment_amount.trim() !== "" && 
-                         task.payment_amount !== "0" && 
+                         String(task.payment_amount).trim() !== "" && 
+                         String(task.payment_amount) !== "0" && 
                          !hasPaymentTxHash;
+  
+  // Debug logging for payment button
+  if (process.env.NODE_ENV === 'development' && task.completed && isCreator && !isRequestMoney && task.payment_amount) {
+    console.log(`[TaskCard ${task.id}] Make Payment Button Logic:`, {
+      taskId: task.id,
+      completed: task.completed,
+      isCreator,
+      isRequestMoney,
+      payment_amount: task.payment_amount,
+      payment_tx_hash: task.payment_tx_hash,
+      hasPaymentTxHash,
+      canMakePayment
+    });
+  }
 
   const priorityLabels = ["Low", "Medium", "High", "Urgent"];
   const priorityColors = ["#71717a", "#eab308", "#f97316", "#ef4444"];
@@ -1925,14 +1950,17 @@ export default function App() {
         addToast("Success", `Payment initiated! ${paymentCSPR} CSPR transfer transaction: ${formatAddress(paymentResult.txHash, 10, 8)}`, "success");
         
         // Save payment transaction hash to task
+        console.log(`💾 Saving payment_tx_hash: ${paymentResult.txHash}`);
         await upsertTask({
           ...task,
           payment_tx_hash: paymentResult.txHash
         });
         
-        // Refresh circle data to update UI
+        // Refresh circle data to update UI (with a small delay to ensure DB is updated)
         if (circle?.id) {
+          await new Promise(resolve => setTimeout(resolve, 500));
           await refreshCircleData(circle.id);
+          console.log(`✅ Circle data refreshed after payment`);
         }
       }
     } catch (paymentErr) {
